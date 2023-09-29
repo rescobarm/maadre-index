@@ -1,9 +1,73 @@
 ﻿@page "/"
+@* @using BlazorCaptcha *@
+@using System.ComponentModel
+@inject IJSRuntime JS;
 
-<PageTitle>Index</PageTitle>
+<h3>reCAPTCHA</h3>
 
-<h1>Hello, world!</h1>
 
-Welcome to your new app.
+<div id="recaptcha_container"></div>
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+<button type="button" class="btn btn-primary" @onclick="ShowResponse">Show Response</button>
+
+<br />
+
+@reCAPTCHA_response
+
+@code {
+    private int WidgetId;
+
+    public string reCAPTCHA_response;
+     // IJSObjectReference jsModule;
+     //    jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/shyfp/sac/ccMain.js");
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("loadScript", "https://www.google.com/recaptcha/api.js");
+
+        await JS.InvokeVoidAsync("loadScript", "./Scripts/JsOfReCAPTCHA.js");
+
+        if (firstRender)
+        {
+            WidgetId = await JS.InvokeAsync<int>("render_recaptcha", DotNetObjectReference.Create(this), "recaptcha_container", "6Lf4qVMoAAAAAGi1MKYTKi4W-UYwYGoshUpa5zWo");
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    [JSInvokable, EditorBrowsable(EditorBrowsableState.Never)]
+    public void CallbackOnSuccess(string response)
+    {
+        reCAPTCHA_response = response;
+    }
+
+    [JSInvokable, EditorBrowsable(EditorBrowsableState.Never)]
+    public void CallbackOnExpired()
+    {
+        //...
+    }
+
+
+    private void ShowResponse()
+    {
+        reCAPTCHA_response = "";
+        reCAPTCHA_response = $"The response for the reCAPTCHA widget: {reCAPTCHA_response}";
+    }
+}
+
+
+@* <Captcha @bind-CaptchaWord="@Captcha" Width="200" Height="50" CharNumber="@CaptchaLetters" />
+
+<p>@Captcha</p>
+
+@code {
+    private string Captcha = "";
+    private int CaptchaLetters = 5;
+
+    protected override Task OnInitializedAsync()
+    {
+        Captcha = BlazorCaptcha.Tools.GetCaptchaWord(CaptchaLetters);
+
+        return base.OnInitializedAsync();
+    }
+} *@
